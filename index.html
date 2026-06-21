@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFXI Haste Calculator</title>
+<style>
+:root {
+  --bg:       #080b14;
+  --bg-sec:   #0f1422;
+  --bg-card:  #161d35;
+  --border:   #243060;
+  --gold:     #c8a44a;
+  --gold-lt:  #e8c46a;
+  --text:     #ccd4ee;
+  --muted:    #6878a8;
+  --magic:    #5888e0;
+  --magic-lt: #7aadff;
+  --ja:       #d97030;
+  --ja-lt:    #ff9850;
+  --eq:       #38a86a;
+  --eq-lt:    #55c888;
+  --tot:      #9050c8;
+  --tot-lt:   #bf80f8;
+  --warn:     #d84040;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  padding: 20px 16px 40px;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header { text-align: center; margin-bottom: 22px; }
+header h1 {
+  font-size: 1.9rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 0 24px rgba(200,164,74,.5);
+}
+header p { color: var(--muted); font-size: .8rem; margin-top: 5px; letter-spacing: 1px; }
+
+/* ── Three-column grid ── */
+.cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  max-width: 1160px;
+  margin: 0 auto 18px;
+}
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--bg-sec);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px 16px;
+}
+.panel-magic { border-top: 3px solid var(--magic); }
+.panel-ja    { border-top: 3px solid var(--ja); }
+.panel-eq    { border-top: 3px solid var(--eq); }
+
+/* ── Panel header + mini-bar ── */
+.panel-head { margin-bottom: 10px; }
+.panel-head h2 { font-size: .95rem; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+.panel-magic h2 { color: var(--magic-lt); }
+.panel-ja    h2 { color: var(--ja-lt); }
+.panel-eq    h2 { color: var(--eq-lt); }
+.cap-tag { font-size: .7rem; color: var(--muted); font-weight: 400; }
+
+.panel-total { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.panel-val { font-size: 1.15rem; font-weight: 700; min-width: 60px; }
+.panel-magic .panel-val { color: var(--magic-lt); }
+.panel-ja    .panel-val { color: var(--ja-lt); }
+.panel-eq    .panel-val { color: var(--eq-lt); }
+.panel-val.overcap { color: var(--gold-lt) !important; }
+
+.track {
+  flex: 1; height: 7px; background: var(--bg-card);
+  border-radius: 4px; overflow: hidden;
+}
+.fill {
+  height: 100%; border-radius: 4px; width: 0%;
+  transition: width .25s, background .25s;
+}
+.fill-magic { background: linear-gradient(90deg, var(--magic), var(--magic-lt)); }
+.fill-ja    { background: linear-gradient(90deg, var(--ja),    var(--ja-lt)); }
+.fill-eq    { background: linear-gradient(90deg, var(--eq),    var(--eq-lt)); }
+.fill-capped { background: linear-gradient(90deg, var(--gold), var(--gold-lt)) !important; }
+
+.over-msg {
+  font-size: .7rem; color: var(--gold-lt);
+  display: none; margin-top: 2px;
+}
+
+/* ── Groups inside panels ── */
+.grp-label {
+  font-size: .65rem; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted); margin: 10px 0 5px;
+}
+hr.div { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+/* ── Buff rows ── */
+.row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 5px;
+}
+.row-lbl { flex: 1; font-size: .82rem; }
+.est { font-size: .6rem; color: var(--muted); vertical-align: super; }
+.row-val { font-size: .7rem; color: var(--muted); white-space: nowrap; min-width: 38px; text-align: right; }
+
+select {
+  background: var(--bg-card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 2px 5px; font-size: .76rem; cursor: pointer;
+  max-width: 160px;
+}
+select:focus { outline: 1px solid var(--gold); }
+
+input[type="checkbox"] {
+  width: 15px; height: 15px; cursor: pointer;
+  accent-color: var(--gold); flex-shrink: 0;
+}
+
+/* ── Equipment slider ── */
+.slider-block { margin-top: 10px; }
+.slider-block label { font-size: .82rem; display: block; margin-bottom: 4px; }
+input[type="range"] {
+  width: 100%; accent-color: var(--eq); cursor: pointer; margin-bottom: 2px;
+}
+.slider-ticks { display: flex; justify-content: space-between; font-size: .65rem; color: var(--muted); }
+.equip-input-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.equip-input-row span { font-size: .82rem; color: var(--muted); }
+input[type="number"] {
+  width: 76px; background: var(--bg-card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 8px; font-size: .95rem; text-align: center;
+}
+input[type="number"]:focus { outline: 1px solid var(--gold); }
+.equip-note { font-size: .72rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+/* ── Summary panel ── */
+.summary {
+  max-width: 1160px; margin: 0 auto 16px;
+  background: var(--bg-sec); border: 1px solid var(--border);
+  border-radius: 8px; padding: 18px 20px;
+}
+.summary h2 {
+  text-align: center; color: var(--gold); font-size: .85rem;
+  text-transform: uppercase; letter-spacing: 3px; margin-bottom: 14px;
+}
+
+.result-cards {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;
+}
+@media (max-width: 600px) { .result-cards { grid-template-columns: repeat(2, 1fr); } }
+
+.rcard {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px; text-align: center;
+}
+.rcard .rlabel { font-size: .65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.rcard .rval   { font-size: 1.55rem; font-weight: 700; margin: 2px 0; }
+.rcard .rcap   { font-size: .65rem; color: var(--muted); }
+.rcard-magic .rval { color: var(--magic-lt); }
+.rcard-ja    .rval { color: var(--ja-lt); }
+.rcard-eq    .rval { color: var(--eq-lt); }
+.rcard-tot {
+  border-color: var(--tot); background: #160e2a;
+}
+.rcard-tot .rval { color: var(--tot-lt); }
+
+/* ── Total stacked bar ── */
+.total-bar-wrap { position: relative; }
+.total-track {
+  height: 22px; background: var(--bg-card); border-radius: 11px;
+  overflow: hidden; border: 1px solid var(--border);
+  display: flex;
+}
+.tseg { height: 100%; transition: width .25s; }
+.tseg-magic { background: var(--magic); }
+.tseg-ja    { background: var(--ja); }
+.tseg-eq    { background: var(--eq); }
+
+.cap-line {
+  position: absolute; top: -4px; bottom: -4px;
+  width: 2px; background: var(--warn);
+  left: 80%; /* 80% of 100% width */
+  pointer-events: none;
+}
+.cap-line::after {
+  content: '80%'; position: absolute; top: -18px; left: -14px;
+  font-size: .65rem; color: var(--warn); white-space: nowrap;
+}
+.bar-ticks {
+  display: flex; justify-content: space-between;
+  font-size: .65rem; color: var(--muted); margin-top: 3px;
+}
+
+.delay-row {
+  text-align: center; margin-top: 12px; font-size: .85rem; color: var(--muted);
+}
+.delay-row span { color: var(--tot-lt); font-weight: 700; }
+
+/* ── Legend ── */
+.legend {
+  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  margin-top: 10px; font-size: .72rem; color: var(--muted);
+}
+.legend-dot {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 2px; margin-right: 4px; vertical-align: middle;
+}
+
+footer {
+  text-align: center; color: var(--muted); font-size: .72rem; margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FFXI Haste Calculator</h1>
+  <p>Magic Haste (cap 43.75%) &nbsp;+&nbsp; Job Ability Haste (cap 25%) &nbsp;+&nbsp; Equipment Haste (cap 26%) &nbsp;=&nbsp; Total (cap 80%)</p>
+</header>
+
+<!-- ══════════ THREE COLUMNS ══════════ -->
+<div class="cols">
+
+  <!-- ── MAGIC HASTE ── -->
+  <div class="panel panel-magic">
+    <div class="panel-head">
+      <h2>Magic Haste <span class="cap-tag">(cap: 43.75%)</span></h2>
+      <div class="panel-total">
+        <span class="panel-val" id="magic-val">0.00%</span>
+        <div class="track"><div class="fill fill-magic" id="magic-bar"></div></div>
+      </div>
+      <div class="over-msg" id="magic-over">&#10022; Cap reached!</div>
+    </div>
+
+    <!-- Songs -->
+    <div class="grp-label">Songs (BRD)</div>
+
+    <div class="row">
+      <span class="row-lbl">Advancing March</span>
+      <select id="adv" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="108">+0 &nbsp;(10.55%)</option>
+        <option value="118">+1 &nbsp;(11.52%)</option>
+        <option value="129">+2 &nbsp;(12.60%)</option>
+        <option value="140">+3 &nbsp;(13.67%)</option>
+        <option value="151">+4 &nbsp;(14.75%)</option>
+        <option value="162">+5 &nbsp;(15.82%)</option>
+        <option value="172">+6 &nbsp;(16.80%)</option>
+        <option value="183">+7 &nbsp;(17.87%)</option>
+        <option value="194">+8 &nbsp;(18.95%)</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Checking this box multiplies this song's haste potency by ×1.5">
+        <input type="checkbox" id="merc-adv" onchange="mercatoSelect('adv')" style="margin:0;width:13px;height:13px;"> Mercato
+      </label>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Victory March</span>
+      <select id="vic" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="163">+0 &nbsp;(15.92%)</option>
+        <option value="179">+1 &nbsp;(17.48%)</option>
+        <option value="195">+2 &nbsp;(19.04%)</option>
+        <option value="211">+3 &nbsp;(20.61%)</option>
+        <option value="228">+4 &nbsp;(22.27%)</option>
+        <option value="244">+5 &nbsp;(23.83%)</option>
+        <option value="260">+6 &nbsp;(25.39%)</option>
+        <option value="277">+7 &nbsp;(27.05%)</option>
+        <option value="293">+8 &nbsp;(28.61%)</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Checking this box multiplies this song's haste potency by ×1.5">
+        <input type="checkbox" id="merc-vic" onchange="mercatoSelect('vic')" style="margin:0;width:13px;height:13px;"> Mercato
+      </label>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Honor March</span>
+      <select id="hon" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="126">+0 &nbsp;(12.30%)</option>
+        <option value="138">+1 &nbsp;(13.48%)</option>
+        <option value="150">+2 &nbsp;(14.65%)</option>
+        <option value="162">+3 &nbsp;(15.82%)</option>
+        <option value="174">+4 &nbsp;(16.99%)</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Checking this box multiplies this song's haste potency by ×1.5">
+        <input type="checkbox" id="merc-hon" onchange="mercatoSelect('hon')" style="margin:0;width:13px;height:13px;"> Mercato
+      </label>
+    </div>
+
+    <hr class="div">
+
+    <!-- Enhancing Magic -->
+    <div class="grp-label">Enhancing Magic (WHM / RDM / SCH)</div>
+
+    <div class="row">
+      <span class="row-lbl">Haste spell</span>
+      <select id="haste-spell" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="150">Haste &nbsp;(15%)</option>
+        <option value="307">Haste II &nbsp;(30%)</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Embrava</span>
+      <input type="checkbox" id="embrava" onchange="recalc()">
+      <span class="row-val">25.5%</span>
+    </div>
+
+    <hr class="div">
+
+    <!-- Blood Pact -->
+    <div class="grp-label">Blood Pact (SMN)</div>
+
+    <div class="row">
+      <span class="row-lbl">Hastega</span>
+      <select id="hastega" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="153">Hastega &nbsp;(15%)</option>
+        <option value="307">Hastega II &nbsp;(30%)</option>
+      </select>
+    </div>
+
+    <hr class="div">
+
+    <!-- Blue Magic -->
+    <div class="grp-label">Blue Magic (BLU)</div>
+
+    <div class="row">
+      <span class="row-lbl">Refueling <span class="est" title="Estimated value">~</span></span>
+      <input type="checkbox" id="refueling" onchange="recalc()">
+      <span class="row-val">10%</span>
+    </div>
+    <div class="row">
+      <span class="row-lbl">Animating Wail <span class="est" title="Estimated value">~</span></span>
+      <input type="checkbox" id="anim-wail" onchange="recalc()">
+      <span class="row-val">15%</span>
+    </div>
+    <div class="row">
+      <span class="row-lbl">Mighty Guard <span class="est" title="Estimated value">~</span></span>
+      <input type="checkbox" id="mighty-guard" onchange="recalc()">
+      <span class="row-val">15%</span>
+    </div>
+    <div class="row">
+      <span class="row-lbl">Erratic Flutter</span>
+      <input type="checkbox" id="erratic" onchange="recalc()">
+      <span class="row-val">30%</span>
+    </div>
+
+    <hr class="div">
+
+    <!-- Geomancy -->
+    <div class="grp-label">Geomancy (GEO) <span class="est" title="Estimated values">~</span></div>
+
+    <div class="row">
+      <span class="row-lbl">Indi-Haste</span>
+      <select id="indi" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="25">0 Skill &nbsp;(2.4%)</option>
+        <option value="306">900 Skill &nbsp;(29.9%)</option>
+        <option value="419">Idris+900 &nbsp;(40.9%)</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Geo-Haste</span>
+      <select id="geo" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="25">0 Skill &nbsp;(2.4%)</option>
+        <option value="306">900 Skill &nbsp;(29.9%)</option>
+        <option value="419">Idris+900 &nbsp;(40.9%)</option>
+      </select>
+    </div>
+
+  </div><!-- /panel-magic -->
+
+  <!-- ── JOB ABILITY HASTE ── -->
+  <div class="panel panel-ja">
+    <div class="panel-head">
+      <h2>Job Ability Haste <span class="cap-tag">(cap: 25%)</span></h2>
+      <div class="panel-total">
+        <span class="panel-val" id="ja-val">0.00%</span>
+        <div class="track"><div class="fill fill-ja" id="ja-bar"></div></div>
+      </div>
+      <div class="over-msg" id="ja-over">&#10022; Cap reached!</div>
+    </div>
+
+    <div class="grp-label" style="margin-top:10px">Job Abilities</div>
+
+    <div class="row">
+      <span class="row-lbl">Hasso (SAM) <span class="est" title="Estimated value">~</span></span>
+      <input type="checkbox" id="hasso" onchange="recalc()">
+      <span class="row-val">10%</span>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Last Resort (DRK) <span class="est" title="Estimated value">~</span></span>
+      <select id="last-resort" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="51">Lv.15 &nbsp;(5%)</option>
+        <option value="102">Lv.30 &nbsp;(10%)</option>
+        <option value="153">Lv.45 &nbsp;(15%)</option>
+        <option value="255">5/5 Desperate Blows &nbsp;(25%)</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Haste Samba (DNC)</span>
+      <select id="samba" onchange="recalc()">
+        <option value="0">None</option>
+        <option value="51">No Merits &nbsp;(5%)</option>
+        <option value="101">5/5 Merits &nbsp;(10%)</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <span class="row-lbl">Wyvern / Spirit Link (DRG) <span class="est" title="Estimated value">~</span></span>
+      <input type="checkbox" id="wyvern" onchange="recalc()">
+      <span class="row-val">10%</span>
+    </div>
+
+  </div><!-- /panel-ja -->
+
+  <!-- ── EQUIPMENT HASTE ── -->
+  <div class="panel panel-eq">
+    <div class="panel-head">
+      <h2>Equipment Haste <span class="cap-tag">(cap: 26%)</span></h2>
+      <div class="panel-total">
+        <span class="panel-val" id="eq-val">0.00%</span>
+        <div class="track"><div class="fill fill-eq" id="eq-bar"></div></div>
+      </div>
+      <div class="over-msg" id="eq-over">&#10022; Cap reached!</div>
+    </div>
+
+    <div class="slider-block">
+      <label>Equipment Haste %</label>
+      <input type="range" id="eq-slider" min="0" max="30" step="0.5" value="0" oninput="sliderSync(this.value)">
+      <div class="slider-ticks">
+        <span>0%</span><span>5%</span><span>10%</span><span>15%</span>
+        <span>20%</span><span>25%</span><span>30%</span>
+      </div>
+      <div class="equip-input-row">
+        <input type="number" id="eq-num" min="0" max="30" step="0.5" value="0"
+               oninput="numSync(this.value)">
+        <span>% equipment haste</span>
+      </div>
+      <p class="equip-note">
+        Enter the sum of Haste% from all equipped gear, JSE, and Atma.
+        Please note: FFXI expresses Haste values in /1024, so wearing 
+		26% Haste in gear will ensure you remain capped despite fractional differences).		
+      </p>
+    </div>
+
+  </div><!-- /panel-eq -->
+
+</div><!-- /cols -->
+
+<!-- ══════════ SUMMARY ══════════ -->
+<div class="summary">
+  <h2>Haste Summary</h2>
+
+  <div class="result-cards">
+    <div class="rcard rcard-magic">
+      <div class="rlabel">Magic Haste</div>
+      <div class="rval" id="rval-magic">0.00%</div>
+      <div class="rcap">cap: 43.75%</div>
+    </div>
+    <div class="rcard rcard-ja">
+      <div class="rlabel">JA Haste</div>
+      <div class="rval" id="rval-ja">0.00%</div>
+      <div class="rcap">cap: 25%</div>
+    </div>
+    <div class="rcard rcard-eq">
+      <div class="rlabel">Equip Haste</div>
+      <div class="rval" id="rval-eq">0.00%</div>
+      <div class="rcap">cap: 26%</div>
+    </div>
+    <div class="rcard rcard-tot">
+      <div class="rlabel">Total Haste</div>
+      <div class="rval" id="rval-tot">0.00%</div>
+      <div class="rcap">cap: 80%</div>
+    </div>
+  </div>
+
+  <!-- Stacked bar -->
+  <div class="total-bar-wrap">
+    <div class="total-track">
+      <div class="tseg tseg-magic" id="tseg-magic"></div>
+      <div class="tseg tseg-ja"    id="tseg-ja"></div>
+      <div class="tseg tseg-eq"    id="tseg-eq"></div>
+    </div>
+    <div class="cap-line"></div>
+    <div class="bar-ticks">
+      <span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span><span>100%</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="legend-dot" style="background:var(--magic)"></span>Magic Haste</span>
+    <span><span class="legend-dot" style="background:var(--ja)"></span>JA Haste</span>
+    <span><span class="legend-dot" style="background:var(--eq)"></span>Equip Haste</span>
+    <span style="color:var(--warn)">&#9474; 80% cap</span>
+  </div>
+
+  <div class="delay-row">
+    Delay remaining: <span id="delay-pct">100.00%</span> of base &nbsp;&bull;&nbsp;
+    Attack speed multiplier: <span id="speed-mult">1.00&times;</span>
+  </div>
+</div>
+
+<footer>~ FFXI Haste Calculator &nbsp;&bull;&nbsp; <span title="Values marked ~ are estimated from community testing">~ = estimated value</span> &nbsp;&bull;&nbsp; Haste fractions use base 1024</footer>
+
+<script>
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+const sel  = id => parseInt($(id).value) || 0;
+const chk  = id => $(id).checked;
+const pct  = f  => (f / 1024 * 100);
+
+function updateSongDropdown(id) {
+  const selectEl = $(id);
+  const mult = chk('merc-' + id) ? 1.5 : 1;
+  Array.from(selectEl.options).forEach((opt, i) => {
+    if (i === 0) return; // "None" — leave as-is
+    const frac = parseInt(opt.value);
+    const effectiveFrac = Math.round(frac * mult);
+    const pct = (effectiveFrac / 1024 * 100).toFixed(2);
+    opt.text = '+' + (i - 1) + '  (' + pct + '%)';
+  });
+}
+
+function mercatoSelect(which) {
+  ['adv', 'vic', 'hon'].forEach(id => {
+    if (id !== which) $('merc-' + id).checked = false;
+    updateSongDropdown(id);
+  });
+  recalc();
+}
+
+function recalc() {
+  // ── Magic Haste (fractions /1024) ──
+  let mFrac = 0;
+  mFrac += Math.round(sel('adv') * (chk('merc-adv') ? 1.5 : 1));
+  mFrac += Math.round(sel('vic') * (chk('merc-vic') ? 1.5 : 1));
+  mFrac += Math.round(sel('hon') * (chk('merc-hon') ? 1.5 : 1));
+  mFrac += sel('haste-spell');
+  mFrac += chk('embrava')     ? 266 : 0;
+  mFrac += sel('hastega');
+  mFrac += chk('refueling')   ? 102 : 0;
+  mFrac += chk('anim-wail')   ? 154 : 0;
+  mFrac += chk('mighty-guard')? 154 : 0;
+  mFrac += chk('erratic')     ? 307 : 0;
+  mFrac += sel('indi');
+  mFrac += sel('geo');
+
+  const MAGIC_CAP = 448;
+  const mOver  = mFrac > MAGIC_CAP;
+  const mCap   = Math.min(mFrac, MAGIC_CAP);
+  const mPct   = pct(mFrac);
+  const mCapPct= pct(mCap);
+
+  // ── JA Haste ──
+  let jFrac = 0;
+  jFrac += chk('hasso')  ? 102 : 0;
+  jFrac += sel('last-resort');
+  jFrac += sel('samba');
+  jFrac += chk('wyvern') ? 101 : 0;
+
+  const JA_CAP = 256;
+  const jOver  = jFrac > JA_CAP;
+  const jCap   = Math.min(jFrac, JA_CAP);
+  const jPct   = pct(jFrac);
+  const jCapPct= pct(jCap);
+
+  // ── Equipment Haste ──
+  const eRaw   = Math.max(0, parseFloat($('eq-num').value) || 0);
+  const eFrac  = eRaw / 100 * 1024;
+  const EQ_CAP = 256;
+  const eOver  = eFrac > EQ_CAP;
+  const eCap   = Math.min(eFrac, EQ_CAP);
+  const eCapPct= pct(eCap);
+
+  // ── Total ──
+  const totFrac = mCap + jCap + eCap;
+  const totPct  = pct(totFrac);
+  const totCap  = Math.min(totPct, 80);
+
+  // ── Update per-panel values ──
+  setPanel('magic', mPct, mCapPct, MAGIC_CAP, mOver, 'magic');
+  setPanel('ja',    jPct, jCapPct, JA_CAP,    jOver, 'ja');
+  setEqPanel(eRaw, eCapPct, EQ_CAP, eOver);
+
+  // ── Update summary cards ──
+  $('rval-magic').textContent = mCapPct.toFixed(2) + '%';
+  $('rval-ja').textContent    = jCapPct.toFixed(2) + '%';
+  $('rval-eq').textContent    = eCapPct.toFixed(2) + '%';
+  $('rval-tot').textContent   = totCap.toFixed(2) + '%';
+
+  // ── Stacked bar (each segment width = its capped % within 100% bar width) ──
+  // Trim so total visual width never exceeds 80% (cap)
+  let remPx = 80;
+  const mW = Math.min(mCapPct, remPx); remPx -= mW;
+  const jW = Math.min(jCapPct, remPx); remPx -= jW;
+  const eW = Math.min(eCapPct, remPx);
+
+  $('tseg-magic').style.width = mW + '%';
+  $('tseg-ja').style.width    = jW + '%';
+  $('tseg-eq').style.width    = eW + '%';
+
+  // ── Delay info ──
+  const delayRem  = 100 - totCap;
+  const speedMult = 100 / delayRem;
+  $('delay-pct').textContent  = delayRem.toFixed(2) + '%';
+  $('speed-mult').textContent = speedMult.toFixed(2) + '\xD7';
+}
+
+function setPanel(prefix, rawPct, capPct, fracCap, over, colorClass) {
+  const valEl  = $(prefix + '-val');
+  const barEl  = $(prefix + '-bar');
+  const overEl = $(prefix + '-over');
+  const capPctFull = pct(fracCap); // 43.75, 25, 26
+
+  valEl.textContent = rawPct.toFixed(2) + '%';
+  valEl.className   = 'panel-val' + (over ? ' overcap' : '');
+  overEl.style.display = over ? 'block' : 'none';
+
+  const barWidth = Math.min(rawPct / capPctFull * 100, 100);
+  barEl.style.width = barWidth + '%';
+  barEl.className   = 'fill fill-' + colorClass + (over ? ' fill-capped' : '');
+}
+
+function setEqPanel(rawPct, capPct, fracCap, over) {
+  const valEl  = $('eq-val');
+  const barEl  = $('eq-bar');
+  const overEl = $('eq-over');
+
+  valEl.textContent = rawPct.toFixed(2) + '%';
+  valEl.className   = 'panel-val' + (over ? ' overcap' : '');
+  overEl.style.display = over ? 'block' : 'none';
+
+  const barWidth = Math.min(rawPct / 25 * 100, 100);
+  barEl.style.width = barWidth + '%';
+  barEl.className   = 'fill fill-eq' + (over ? ' fill-capped' : '');
+}
+
+// ── Slider / number sync ──
+function sliderSync(v) {
+  $('eq-num').value = v;
+  recalc();
+}
+function numSync(v) {
+  const clamped = Math.min(Math.max(parseFloat(v) || 0, 0), 30);
+  $('eq-slider').value = clamped;
+  recalc();
+}
+
+recalc();
+</script>
+</body>
+</html>
