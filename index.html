@@ -245,7 +245,14 @@ footer {
     </div>
 
     <!-- Songs -->
-    <div class="grp-label">Songs (BRD)</div>
+    <div class="grp-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Songs (BRD)</span>
+      <label style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text);font-weight:600;cursor:pointer;text-transform:none;letter-spacing:normal;"
+             title="Doubles the potency of all songs. Takes precedence over Marcato.">
+        Soul Voice
+        <input type="checkbox" id="soul-voice" onchange="soulVoiceChange()" style="margin:0;">
+      </label>
+    </div>
 
     <div class="row">
       <span class="row-lbl">Advancing March</span>
@@ -261,8 +268,8 @@ footer {
         <option value="183">+7 &nbsp;(17.87%)</option>
         <option value="194">+8 &nbsp;(18.95%)</option>
       </select>
-      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Checking this box multiplies this song's haste potency by ×1.5">
-        <input type="checkbox" id="merc-adv" onchange="mercatoSelect('adv')" style="margin:0;width:13px;height:13px;"> Mercato
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Marcato: multiplies this song's haste potency by ×1.5">
+        <input type="checkbox" id="merc-adv" onchange="mercatoSelect('adv')" style="margin:0;width:13px;height:13px;"> Marcato
       </label>
     </div>
 
@@ -280,8 +287,8 @@ footer {
         <option value="277">+7 &nbsp;(27.05%)</option>
         <option value="293">+8 &nbsp;(28.61%)</option>
       </select>
-      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Checking this box multiplies this song's haste potency by ×1.5">
-        <input type="checkbox" id="merc-vic" onchange="mercatoSelect('vic')" style="margin:0;width:13px;height:13px;"> Mercato
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Marcato: multiplies this song's haste potency by ×1.5">
+        <input type="checkbox" id="merc-vic" onchange="mercatoSelect('vic')" style="margin:0;width:13px;height:13px;"> Marcato
       </label>
     </div>
 
@@ -295,8 +302,8 @@ footer {
         <option value="162">+3 &nbsp;(15.82%)</option>
         <option value="174">+4 &nbsp;(16.99%)</option>
       </select>
-      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Checking this box multiplies this song's haste potency by ×1.5">
-        <input type="checkbox" id="merc-hon" onchange="mercatoSelect('hon')" style="margin:0;width:13px;height:13px;"> Mercato
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;" title="Marcato: multiplies this song's haste potency by ×1.5">
+        <input type="checkbox" id="merc-hon" onchange="mercatoSelect('hon')" style="margin:0;width:13px;height:13px;"> Marcato
       </label>
     </div>
 
@@ -363,7 +370,14 @@ footer {
     <hr class="div">
 
     <!-- Geomancy -->
-    <div class="grp-label">Geomancy (GEO) <span class="est" title="Estimated values">~</span></div>
+    <div class="grp-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Geomancy (GEO) <span class="est" title="Estimated values">~</span></span>
+      <label style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text);font-weight:600;cursor:pointer;text-transform:none;letter-spacing:normal;"
+             title="Doubles the potency of Indi/Geocolure spells. Takes precedence over BoG and EA.">
+        Bolster
+        <input type="checkbox" id="bolster" onchange="bolsterChange()" style="margin:0;">
+      </label>
+    </div>
 
     <div class="row">
       <span class="row-lbl">Indi-Haste</span>
@@ -373,6 +387,14 @@ footer {
         <option value="306">900 Skill &nbsp;(29.9%)</option>
         <option value="419">Idris+900 &nbsp;(40.9%)</option>
       </select>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;"
+             title="Blaze of Glory: adds +50% to this spell's haste potency (additive with EA)">
+        <input type="checkbox" id="bog-indi" onchange="recalc()" style="margin:0;width:13px;height:13px;"> BoG
+      </label>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;"
+             title="Ecc. Attrition: adds +25% to this spell's haste potency (additive with BoG)">
+        <input type="checkbox" id="ea-indi" onchange="recalc()" style="margin:0;width:13px;height:13px;"> EA
+      </label>
     </div>
 
     <div class="row">
@@ -383,6 +405,14 @@ footer {
         <option value="306">900 Skill &nbsp;(29.9%)</option>
         <option value="419">Idris+900 &nbsp;(40.9%)</option>
       </select>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;"
+             title="Blaze of Glory: adds +50% to this spell's haste potency (additive with EA)">
+        <input type="checkbox" id="bog-geo" onchange="recalc()" style="margin:0;width:13px;height:13px;"> BoG
+      </label>
+      <label style="display:flex;align-items:center;gap:3px;font-size:.65rem;color:var(--muted);white-space:nowrap;cursor:pointer;"
+             title="Ecc. Attrition: adds +25% to this spell's haste potency (additive with BoG)">
+        <input type="checkbox" id="ea-geo" onchange="recalc()" style="margin:0;width:13px;height:13px;"> EA
+      </label>
     </div>
 
   </div><!-- /panel-magic -->
@@ -401,9 +431,31 @@ footer {
     <div class="grp-label" style="margin-top:10px">Job Abilities</div>
 
     <div class="row">
-      <span class="row-lbl">Hasso (SAM) <span class="est" title="Estimated value">~</span></span>
-      <input type="checkbox" id="hasso" onchange="recalc()">
-      <span class="row-val">10%</span>
+      <span class="row-lbl">Hasso <span class="est" title="Estimated value">~</span></span>
+      <select id="hasso" onchange="recalc()">
+        <option value="0">None</option>
+        <optgroup label="All Jobs">
+          <option value="10"> 1%</option>
+          <option value="20"> 2%</option>
+          <option value="31"> 3%</option>
+          <option value="41"> 4%</option>
+          <option value="51"> 5%</option>
+          <option value="61"> 6%</option>
+          <option value="72"> 7%</option>
+          <option value="82"> 8%</option>
+          <option value="92"> 9%</option>
+          <option value="102">10%</option>
+        </optgroup>
+        <optgroup label="SAM only">
+          <option value="113">11%</option>
+          <option value="123">12%</option>
+          <option value="133">13%</option>
+          <option value="143">14%</option>
+          <option value="154">15%</option>
+          <option value="164">16%</option>
+          <option value="174">17%</option>
+        </optgroup>
+      </select>
     </div>
 
     <div class="row">
@@ -521,7 +573,10 @@ footer {
   </div>
 </div>
 
-<footer>~ FFXI Haste Calculator &nbsp;&bull;&nbsp; <span title="Values marked ~ are estimated from community testing">~ = estimated value</span> &nbsp;&bull;&nbsp; Haste fractions use base 1024</footer>
+<footer>
+  ~ FFXI Haste Calculator &nbsp;&bull;&nbsp; <span title="Values marked ~ are estimated from community testing">~ = estimated value</span> &nbsp;&bull;&nbsp; Haste fractions use base 1024
+  <br>Updated Date: June 22, 2026
+</footer>
 
 <script>
 // ── Helpers ──
@@ -532,7 +587,8 @@ const pct  = f  => (f / 1024 * 100);
 
 function updateSongDropdown(id) {
   const selectEl = $(id);
-  const mult = chk('merc-' + id) ? 1.5 : 1;
+  const sv = chk('soul-voice');
+  const mult = sv ? 2 : (chk('merc-' + id) ? 1.5 : 1);
   Array.from(selectEl.options).forEach((opt, i) => {
     if (i === 0) return; // "None" — leave as-is
     const frac = parseInt(opt.value);
@@ -540,6 +596,31 @@ function updateSongDropdown(id) {
     const pct = (effectiveFrac / 1024 * 100).toFixed(2);
     opt.text = '+' + (i - 1) + '  (' + pct + '%)';
   });
+}
+
+function bolsterChange() {
+  const b = chk('bolster');
+  ['indi', 'geo'].forEach(spell => {
+    ['bog-', 'ea-'].forEach(prefix => {
+      const cb = $(prefix + spell);
+      cb.disabled = b;
+      cb.parentElement.style.opacity = b ? '0.35' : '';
+      cb.parentElement.style.cursor  = b ? 'not-allowed' : 'pointer';
+    });
+  });
+  recalc();
+}
+
+function soulVoiceChange() {
+  const sv = chk('soul-voice');
+  ['adv', 'vic', 'hon'].forEach(id => {
+    const cb = $('merc-' + id);
+    cb.disabled = sv;
+    cb.parentElement.style.opacity = sv ? '0.35' : '';
+    cb.parentElement.style.cursor  = sv ? 'not-allowed' : 'pointer';
+    updateSongDropdown(id);
+  });
+  recalc();
 }
 
 function mercatoSelect(which) {
@@ -553,9 +634,10 @@ function mercatoSelect(which) {
 function recalc() {
   // ── Magic Haste (fractions /1024) ──
   let mFrac = 0;
-  mFrac += Math.round(sel('adv') * (chk('merc-adv') ? 1.5 : 1));
-  mFrac += Math.round(sel('vic') * (chk('merc-vic') ? 1.5 : 1));
-  mFrac += Math.round(sel('hon') * (chk('merc-hon') ? 1.5 : 1));
+  const sv = chk('soul-voice');
+  mFrac += Math.round(sel('adv') * (sv ? 2 : (chk('merc-adv') ? 1.5 : 1)));
+  mFrac += Math.round(sel('vic') * (sv ? 2 : (chk('merc-vic') ? 1.5 : 1)));
+  mFrac += Math.round(sel('hon') * (sv ? 2 : (chk('merc-hon') ? 1.5 : 1)));
   mFrac += sel('haste-spell');
   mFrac += chk('embrava')     ? 266 : 0;
   mFrac += sel('hastega');
@@ -563,8 +645,10 @@ function recalc() {
   mFrac += chk('anim-wail')   ? 154 : 0;
   mFrac += chk('mighty-guard')? 154 : 0;
   mFrac += chk('erratic')     ? 307 : 0;
-  mFrac += sel('indi');
-  mFrac += sel('geo');
+  const bolster = chk('bolster');
+  const geoMult = spell => bolster ? 2 : 1 + (chk('bog-' + spell) ? 0.5 : 0) + (chk('ea-' + spell) ? 0.25 : 0);
+  mFrac += Math.round(sel('indi') * geoMult('indi'));
+  mFrac += Math.round(sel('geo')  * geoMult('geo'));
 
   const MAGIC_CAP = 448;
   const mOver  = mFrac > MAGIC_CAP;
@@ -574,7 +658,7 @@ function recalc() {
 
   // ── JA Haste ──
   let jFrac = 0;
-  jFrac += chk('hasso')  ? 102 : 0;
+  jFrac += sel('hasso');
   jFrac += sel('last-resort');
   jFrac += sel('samba');
   jFrac += chk('wyvern') ? 101 : 0;
