@@ -23,6 +23,10 @@
   --tot:      #9050c8;
   --tot-lt:   #bf80f8;
   --warn:     #d84040;
+  --dw:       #7060a8;
+  --dw-lt:    #b0a0e8;
+  --ma:       #7a5020;
+  --ma-lt:    #c49040;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -145,6 +149,43 @@ input[type="number"] {
 input[type="number"]:focus { outline: 1px solid var(--gold); }
 .equip-note { font-size: .72rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 
+/* ── Dual Wield panel ── */
+.dw-panel {
+  max-width: 1160px; margin: 0 auto 18px;
+  background: var(--bg-sec); border: 1px solid var(--border);
+  border-top: 3px solid var(--dw); border-radius: 8px;
+  padding: 14px 20px 16px;
+}
+.dw-panel > h2 {
+  font-size: .95rem; font-weight: 700; color: var(--dw-lt);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+}
+.dw-inner { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.dw-controls { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 8px; }
+.dw-result-area {
+  min-width: 170px; text-align: center; padding: 10px 18px;
+  background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border);
+}
+.dw-result-label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.dw-tier-delay { font-size: 2.4rem; font-weight: 800; color: var(--dw-lt); line-height: 1.1; }
+.dw-dw-plus    { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+.dw-dw-plus.dw-capped { color: var(--gold-lt); }
+.dw-jobs-info  { font-size: .72rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+/* ── Martial Arts panel (shares dw-panel layout, overrides color) ── */
+.ma-panel { border-top-color: var(--ma) !important; }
+.ma-panel > h2 { color: var(--ma-lt) !important; }
+.ma-result-val { font-size: 2.4rem; font-weight: 800; color: var(--ma-lt); line-height: 1.1; }
+.ma-sub { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+
+/* ── DW / MA side-by-side row ── */
+.dw-ma-row {
+  max-width: 1160px; margin: 0 auto 18px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.dw-ma-row .dw-panel { max-width: none; margin: 0; }
+@media (max-width: 860px) { .dw-ma-row { grid-template-columns: 1fr; } }
+
 /* ── Summary panel ── */
 .summary {
   max-width: 1160px; margin: 0 auto 16px;
@@ -187,6 +228,7 @@ input[type="number"]:focus { outline: 1px solid var(--gold); }
 .tseg-magic { background: var(--magic); }
 .tseg-ja    { background: var(--ja); }
 .tseg-eq    { background: var(--eq); }
+.tseg-dw    { background: var(--dw); }
 
 .cap-line {
   position: absolute; top: -4px; bottom: -4px;
@@ -471,7 +513,7 @@ footer {
 
     <div class="row">
       <span class="row-lbl">Haste Samba (DNC)</span>
-      <select id="samba" onchange="recalc()">
+      <select id="samba" onchange="sambaSyncFromJA(); recalc()">
         <option value="0">None</option>
         <option value="51">No Merits &nbsp;(5%)</option>
         <option value="101">5/5 Merits &nbsp;(10%)</option>
@@ -520,6 +562,73 @@ footer {
 
 </div><!-- /cols -->
 
+<!-- ══════════ DUAL WIELD / MARTIAL ARTS ══════════ -->
+<div class="dw-ma-row">
+<div class="dw-panel" id="dw-panel">
+  <h2>Dual Wield</h2>
+  <div class="dw-inner">
+    <div class="dw-controls">
+      <div class="row">
+        <span class="row-lbl">DW Tier</span>
+        <select id="dw-tier" onchange="recalc()">
+          <option value="0">None</option>
+          <option value="1">Tier 1 — 10% delay reduction</option>
+          <option value="2">Tier 2 — 15% delay reduction</option>
+          <option value="3">Tier 3 — 25% delay reduction</option>
+          <option value="4">Tier 4 — 30% delay reduction</option>
+          <option value="5">Tier 5 — 35% delay reduction</option>
+          <option value="6">Tier 6 — 40% delay reduction</option>
+        </select>
+      </div>
+      <div class="row">
+        <span class="row-lbl">Haste Samba (DNC role)</span>
+        <select id="dw-samba" onchange="sambaSyncFromDW(); recalc()">
+          <option value="No">None</option>
+          <option value="Sub">Yes — DNC Subjob</option>
+          <option value="Main">Yes — DNC Main</option>
+        </select>
+      </div>
+      <div id="dw-jobs-info" class="dw-jobs-info"></div>
+    </div>
+    <div class="dw-result-area">
+      <div class="dw-result-label">Delay Reduction</div>
+      <div class="dw-tier-delay" id="dw-tier-delay">—</div>
+      <div class="dw-dw-plus" id="dw-result"></div>
+    </div>
+  </div>
+</div>
+
+<div class="dw-panel ma-panel" id="ma-panel">
+  <h2>Martial Arts</h2>
+  <div class="dw-inner">
+    <div class="dw-controls">
+      <div class="row">
+        <span class="row-lbl">MA Tier</span>
+        <select id="ma-tier" onchange="recalc()">
+          <option value="0">None</option>
+          <option value="1">Tier 1 — 400 delay</option>
+          <option value="2">Tier 2 — 380 delay</option>
+          <option value="3">Tier 3 — 360 delay</option>
+          <option value="4">Tier 4 — 340 delay</option>
+          <option value="5">Tier 5 — 320 delay</option>
+          <option value="6">Tier 6 — 300 delay</option>
+          <option value="7">Tier 7 — 280 delay</option>
+          <option value="8">Tier 8 — 275 delay</option>
+          <option value="9">Tier 9 — 270 delay</option>
+        </select>
+      </div>
+      <div id="ma-jobs-info" class="dw-jobs-info"></div>
+    </div>
+    <div class="dw-result-area">
+      <div class="dw-result-label">Effective H2H Delay</div>
+      <div class="ma-result-val" id="ma-result">—</div>
+      <div class="ma-sub" id="ma-sub"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /dw-ma-row -->
+
 <!-- ══════════ SUMMARY ══════════ -->
 <div class="summary">
   <h2>Haste Summary</h2>
@@ -553,6 +662,7 @@ footer {
       <div class="tseg tseg-magic" id="tseg-magic"></div>
       <div class="tseg tseg-ja"    id="tseg-ja"></div>
       <div class="tseg tseg-eq"    id="tseg-eq"></div>
+      <div class="tseg tseg-dw"    id="tseg-dw"></div>
     </div>
     <div class="cap-line"></div>
     <div class="bar-ticks">
@@ -564,18 +674,23 @@ footer {
     <span><span class="legend-dot" style="background:var(--magic)"></span>Magic Haste</span>
     <span><span class="legend-dot" style="background:var(--ja)"></span>JA Haste</span>
     <span><span class="legend-dot" style="background:var(--eq)"></span>Equip Haste</span>
+    <span id="legend-dw" style="display:none;"><span class="legend-dot" style="background:var(--dw)"></span>Dual Wield</span>
     <span style="color:var(--warn)">&#9474; 80% cap</span>
   </div>
 
-  <div class="delay-row">
+  <div class="delay-row" id="delay-row-std">
     Delay remaining: <span id="delay-pct">100.00%</span> of base &nbsp;&bull;&nbsp;
     Attack speed multiplier: <span id="speed-mult">1.00&times;</span>
+  </div>
+  <div class="delay-row" id="delay-row-ma" style="display:none;">
+    H2H effective delay: <span id="ma-delay-val">—</span> &nbsp;&bull;&nbsp;
+    Attack speed: <span id="ma-speed-val">—</span>&times; <span style="font-size:.75em;color:var(--muted)">(vs. base 480)</span>
   </div>
 </div>
 
 <footer>
   ~ FFXI Haste Calculator &nbsp;&bull;&nbsp; <span title="Values marked ~ are estimated from community testing">~ = estimated value</span> &nbsp;&bull;&nbsp; Haste fractions use base 1024
-  <br>Updated Date: June 22, 2026
+  <br>Updated Date: June 23, 2026
 </footer>
 
 <script>
@@ -631,6 +746,59 @@ function mercatoSelect(which) {
   recalc();
 }
 
+// ── Dual Wield lookup table (source: DualWield.csv) ──
+// Rows keyed by magic haste % breakpoints; columns = DW Tiers 1–6.
+// Value represents attack delay remaining (0 = fully capped).
+const DW_TABLE = {
+  No:   { 0: [64,59,49,44,39,34], 10: [60,55,45,40,35,30], 15: [57,52,42,37,32,27], 30: [46,41,31,26,21,16], 43.75: [26,21,11,6,1,0] },
+  Sub:  { 0: [62,57,47,42,37,32], 10: [57,52,42,37,32,27], 15: [54,49,39,34,29,24], 30: [40,35,25,20,15,10], 43.75: [14,9,0,0,0,0]   },
+  Main: { 0: [60,55,45,40,35,30], 10: [54,49,39,34,29,24], 15: [50,45,35,30,25,20], 30: [33,28,18,13,8,3],   43.75: [0,0,0,0,0,0]    }
+};
+const DW_KEYS = [0, 10, 15, 30, 43.75];
+const DW_TIERS = [
+  { pct: 10, jobs: 'NIN10, DNC20, BLU80*, THF83' },
+  { pct: 15, jobs: 'NIN25, DNC40, BLU89*, THF90' },
+  { pct: 25, jobs: 'NIN45, DNC60, BLU99*, THF98' },
+  { pct: 30, jobs: 'NIN65, DNC80, BLU99*, THF99 (550JP)' },
+  { pct: 35, jobs: 'NIN85, BLU99**, DNC99 (550JP)' },
+  { pct: 40, jobs: 'BLU99**' }
+];
+
+const MA_BASE  = 480;
+const MA_TIERS = [
+  { delay: 400, jobs: 'MNK1, PUP25' },
+  { delay: 380, jobs: 'MNK16, PUP50' },
+  { delay: 360, jobs: 'MNK31, PUP75' },
+  { delay: 340, jobs: 'MNK46, PUP87' },
+  { delay: 320, jobs: 'MNK61, PUP97' },
+  { delay: 300, jobs: 'MNK75, PUP99 (10/20 MA Effect)' },
+  { delay: 280, jobs: 'MNK82, PUP99 (20/20 MA Effect)' },
+  { delay: 275, jobs: 'MNK99 (100JP Gift), PUP99 (550JP Gift)' },
+  { delay: 270, jobs: 'MNK99 (1200JP Gift)' }
+];
+
+function sambaSyncFromJA() {
+  const map = { '0': 'No', '51': 'Sub', '101': 'Main' };
+  $('dw-samba').value = map[$('samba').value] || 'No';
+}
+function sambaSyncFromDW() {
+  const map = { 'No': '0', 'Sub': '51', 'Main': '101' };
+  $('samba').value = map[$('dw-samba').value] || '0';
+}
+
+function getDWValue(cond, magicPct, tierIdx) {
+  const p = Math.min(Math.max(magicPct, 0), 43.75);
+  let lo = DW_KEYS.length - 2;
+  for (let i = 0; i < DW_KEYS.length - 1; i++) {
+    if (p <= DW_KEYS[i + 1]) { lo = i; break; }
+  }
+  const hi = lo + 1;
+  const loRow = DW_TABLE[cond][DW_KEYS[lo]];
+  const hiRow = DW_TABLE[cond][DW_KEYS[hi]];
+  const t = (p - DW_KEYS[lo]) / (DW_KEYS[hi] - DW_KEYS[lo]);
+  return Math.max(0, Math.round(loRow[tierIdx] * (1 - t) + hiRow[tierIdx] * t));
+}
+
 function recalc() {
   // ── Magic Haste (fractions /1024) ──
   let mFrac = 0;
@@ -672,8 +840,8 @@ function recalc() {
   // ── Equipment Haste ──
   const eRaw   = Math.max(0, parseFloat($('eq-num').value) || 0);
   const eFrac  = eRaw / 100 * 1024;
-  const EQ_CAP = 256;
-  const eOver  = eFrac > EQ_CAP;
+  const EQ_CAP = 26 / 100 * 1024;
+  const eOver  = eFrac >= EQ_CAP;
   const eCap   = Math.min(eFrac, EQ_CAP);
   const eCapPct= pct(eCap);
 
@@ -704,11 +872,68 @@ function recalc() {
   $('tseg-ja').style.width    = jW + '%';
   $('tseg-eq').style.width    = eW + '%';
 
-  // ── Delay info ──
-  const delayRem  = 100 - totCap;
-  const speedMult = 100 / delayRem;
-  $('delay-pct').textContent  = delayRem.toFixed(2) + '%';
-  $('speed-mult').textContent = speedMult.toFixed(2) + '\xD7';
+  // ── DW & MA (mutually exclusive) ──
+  const dwTier = parseInt($('dw-tier').value) || 0;
+  const maTier = parseInt($('ma-tier').value) || 0;
+  const dwPct  = dwTier > 0 ? DW_TIERS[dwTier - 1].pct : 0;
+
+  $('dw-tier').disabled       = maTier > 0;
+  $('ma-tier').disabled       = dwTier > 0;
+  $('dw-panel').style.opacity = maTier > 0 ? '0.45' : '';
+  $('ma-panel').style.opacity = dwTier > 0 ? '0.45' : '';
+
+  // DW bar segment: effective delay removed = DW% × remaining delay after haste
+  const dwBarPct = (maTier === 0 && dwTier > 0) ? (dwPct / 100) * (100 - totCap) : 0;
+  $('tseg-dw').style.width = dwBarPct.toFixed(2) + '%';
+
+  // Update Total card: when DW active, show combined effective delay reduction
+  if (dwTier > 0 && maTier === 0) {
+    const combinedPct = (1 - (1 - totCap / 100) * (1 - dwPct / 100)) * 100;
+    $('rval-tot').textContent = combinedPct.toFixed(2) + '%';
+  }
+
+  // ── Delay / speed summary ──
+  if (maTier > 0) {
+    const maInfo         = MA_TIERS[maTier - 1];
+    const effectiveDelay = Math.round(maInfo.delay * (1 - totCap / 100));
+    $('ma-delay-val').textContent    = effectiveDelay;
+    $('ma-speed-val').textContent    = (MA_BASE / effectiveDelay).toFixed(2);
+    $('delay-row-std').style.display = 'none';
+    $('delay-row-ma').style.display  = '';
+    $('ma-result').textContent       = effectiveDelay;
+    $('ma-result').className         = 'ma-result-val';
+    $('ma-sub').textContent          = 'Base: ' + maInfo.delay + ' delay';
+    $('ma-jobs-info').textContent    = 'Jobs: ' + maInfo.jobs;
+  } else {
+    const delayRem  = (100 - totCap) * (1 - dwPct / 100);
+    $('delay-pct').textContent       = delayRem.toFixed(2) + '%';
+    $('speed-mult').textContent      = (100 / delayRem).toFixed(2) + '\xD7';
+    $('delay-row-std').style.display = '';
+    $('delay-row-ma').style.display  = 'none';
+    $('ma-result').textContent       = '480';
+    $('ma-result').className         = 'ma-result-val';
+    $('ma-sub').textContent          = '';
+    $('ma-jobs-info').textContent    = 'Jobs: Any';
+  }
+
+  // ── Dual Wield display ──
+  const dwEl = $('dw-result');
+  if (dwTier > 0) {
+    const dwCond = $('dw-samba').value;
+    const dwVal  = getDWValue(dwCond, mCapPct, dwTier - 1);
+    $('dw-tier-delay').textContent = DW_TIERS[dwTier - 1].pct + '%';
+    dwEl.textContent = 'DW+ Needed: ' + dwVal;
+    dwEl.className   = 'dw-dw-plus';
+    $('dw-jobs-info').textContent = 'Jobs: ' + DW_TIERS[dwTier - 1].jobs;
+    $('legend-dw').style.display  = '';
+  } else {
+    $('dw-tier-delay').textContent = '—';
+    dwEl.textContent = '';
+    dwEl.className   = 'dw-dw-plus';
+    $('dw-jobs-info').textContent  = '';
+    $('legend-dw').style.display   = 'none';
+  }
+
 }
 
 function setPanel(prefix, rawPct, capPct, fracCap, over, colorClass) {
@@ -735,7 +960,7 @@ function setEqPanel(rawPct, capPct, fracCap, over) {
   valEl.className   = 'panel-val' + (over ? ' overcap' : '');
   overEl.style.display = over ? 'block' : 'none';
 
-  const barWidth = Math.min(rawPct / 25 * 100, 100);
+  const barWidth = Math.min(rawPct / 26 * 100, 100);
   barEl.style.width = barWidth + '%';
   barEl.className   = 'fill fill-eq' + (over ? ' fill-capped' : '');
 }
