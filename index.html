@@ -115,6 +115,11 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 }
 .row-lbl { flex: 1; font-size: .82rem; }
 .est { font-size: .6rem; color: var(--muted); vertical-align: super; }
+.ovr-tag {
+  display: none; font-size: .58rem; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--muted); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1px 4px; white-space: nowrap;
+}
 .row-val { font-size: .7rem; color: var(--muted); white-space: nowrap; min-width: 38px; text-align: right; }
 
 select {
@@ -261,15 +266,17 @@ input[type="number"]:focus { outline: 1px solid var(--gold); }
 }
 
 footer {
-  text-align: center; color: var(--muted); font-size: .72rem; margin-top: 8px;
+  text-align: center; color: rgba(229,231,235,0.4); font-size: 12px;
+  padding: 24px 16px 20px; line-height: 1.7;
 }
+footer a { color: inherit; text-decoration: underline; }
 </style>
 </head>
 <body>
 
 <header>
   <h1>FFXI Haste Calculator</h1>
-  <p>Magic Haste (cap 43.75%) &nbsp;+&nbsp; Job Ability Haste (cap 25%) &nbsp;+&nbsp; Equipment Haste (cap 26%) &nbsp;=&nbsp; Total (cap 80%)</p>
+  <p>Magic Haste (cap 43.75%) &nbsp;+&nbsp; Job Ability Haste (cap 25%) &nbsp;+&nbsp; Equipment Haste (cap 25%) &nbsp;=&nbsp; Total (cap 80%)</p>
 </header>
 
 <!-- ══════════ THREE COLUMNS ══════════ -->
@@ -355,7 +362,8 @@ footer {
     <div class="grp-label">Enhancing Magic (WHM / RDM / SCH)</div>
 
     <div class="row">
-      <span class="row-lbl">Haste spell</span>
+      <span class="row-lbl" title="Haste, Haste II, Hastega, Hastega II, and Erratic Flutter share a single buff slot — only the strongest applies">Haste spell</span>
+      <span class="ovr-tag" id="ovr-haste-spell">overwritten</span>
       <select id="haste-spell" onchange="recalc()">
         <option value="0">None</option>
         <option value="150">Haste &nbsp;(15%)</option>
@@ -375,7 +383,8 @@ footer {
     <div class="grp-label">Blood Pact (SMN)</div>
 
     <div class="row">
-      <span class="row-lbl">Hastega</span>
+      <span class="row-lbl" title="Haste, Haste II, Hastega, Hastega II, and Erratic Flutter share a single buff slot — only the strongest applies">Hastega</span>
+      <span class="ovr-tag" id="ovr-hastega">overwritten</span>
       <select id="hastega" onchange="recalc()">
         <option value="0">None</option>
         <option value="153">Hastega &nbsp;(15%)</option>
@@ -404,7 +413,8 @@ footer {
       <span class="row-val">15%</span>
     </div>
     <div class="row">
-      <span class="row-lbl">Erratic Flutter</span>
+      <span class="row-lbl" title="Applies the same buff as Haste II — shares one slot with Haste, Haste II, Hastega, and Hastega II; only the strongest applies">Erratic Flutter</span>
+      <span class="ovr-tag" id="ovr-erratic">overwritten</span>
       <input type="checkbox" id="erratic" onchange="recalc()">
       <span class="row-val">30%</span>
     </div>
@@ -507,6 +517,10 @@ footer {
         <option value="51">Lv.15 &nbsp;(5%)</option>
         <option value="102">Lv.30 &nbsp;(10%)</option>
         <option value="153">Lv.45 &nbsp;(15%)</option>
+        <option value="173">1/5 Desperate Blows &nbsp;(17%)</option>
+        <option value="194">2/5 Desperate Blows &nbsp;(19%)</option>
+        <option value="214">3/5 Desperate Blows &nbsp;(21%)</option>
+        <option value="235">4/5 Desperate Blows &nbsp;(23%)</option>
         <option value="255">5/5 Desperate Blows &nbsp;(25%)</option>
       </select>
     </div>
@@ -531,7 +545,7 @@ footer {
   <!-- ── EQUIPMENT HASTE ── -->
   <div class="panel panel-eq">
     <div class="panel-head">
-      <h2>Equipment Haste <span class="cap-tag">(cap: 26%)</span></h2>
+      <h2>Equipment Haste <span class="cap-tag">(cap: 25%)</span></h2>
       <div class="panel-total">
         <span class="panel-val" id="eq-val">0.00%</span>
         <div class="track"><div class="fill fill-eq" id="eq-bar"></div></div>
@@ -553,8 +567,8 @@ footer {
       </div>
       <p class="equip-note">
         Enter the sum of Haste% from all equipped gear, JSE, and Atma.
-        Please note: FFXI expresses Haste values in /1024, so wearing 
-		26% Haste in gear will ensure you remain capped despite fractional differences).		
+        Please note: FFXI expresses Haste values in /1024, so wearing
+		26% Haste in gear will ensure you remain capped despite fractional differences.
       </p>
     </div>
 
@@ -570,7 +584,7 @@ footer {
     <div class="dw-controls">
       <div class="row">
         <span class="row-lbl">DW Tier</span>
-        <select id="dw-tier" onchange="recalc()">
+        <select id="dw-tier" onchange="recalc()" autocomplete="off">
           <option value="0">None</option>
           <option value="1">Tier 1 — 10% delay reduction</option>
           <option value="2">Tier 2 — 15% delay reduction</option>
@@ -594,6 +608,7 @@ footer {
       <div class="dw-result-label">Delay Reduction</div>
       <div class="dw-tier-delay" id="dw-tier-delay">—</div>
       <div class="dw-dw-plus" id="dw-result"></div>
+      <div class="dw-jobs-info" id="dw-basis"></div>
     </div>
   </div>
 </div>
@@ -604,7 +619,7 @@ footer {
     <div class="dw-controls">
       <div class="row">
         <span class="row-lbl">MA Tier</span>
-        <select id="ma-tier" onchange="recalc()">
+        <select id="ma-tier" onchange="recalc()" autocomplete="off">
           <option value="0">None</option>
           <option value="1">Tier 1 — 400 delay</option>
           <option value="2">Tier 2 — 380 delay</option>
@@ -647,7 +662,7 @@ footer {
     <div class="rcard rcard-eq">
       <div class="rlabel">Equip Haste</div>
       <div class="rval" id="rval-eq">0.00%</div>
-      <div class="rcap">cap: 26%</div>
+      <div class="rcap">cap: 25%</div>
     </div>
     <div class="rcard rcard-tot">
       <div class="rlabel">Total Haste</div>
@@ -689,8 +704,10 @@ footer {
 </div>
 
 <footer>
-  ~ FFXI Haste Calculator &nbsp;&bull;&nbsp; <span title="Values marked ~ are estimated from community testing">~ = estimated value</span> &nbsp;&bull;&nbsp; Haste fractions use base 1024
-  <br>Updated Date: June 23, 2026
+  <span title="Values marked ~ are estimated from community testing">~ = estimated value</span> &nbsp;&middot;&nbsp; Haste fractions use base 1024
+  <br>Last updated <span id="updated-date"></span> &nbsp;&middot;&nbsp; Created by
+  <a href="https://github.com/Fel-FFXI" target="_blank" rel="noopener">Fel</a> and
+  <a href="https://claude.ai/" target="_blank" rel="noopener">Claude</a>
 </footer>
 
 <script>
@@ -746,15 +763,7 @@ function mercatoSelect(which) {
   recalc();
 }
 
-// ── Dual Wield lookup table (source: DualWield.csv) ──
-// Rows keyed by magic haste % breakpoints; columns = DW Tiers 1–6.
-// Value represents attack delay remaining (0 = fully capped).
-const DW_TABLE = {
-  No:   { 0: [64,59,49,44,39,34], 10: [60,55,45,40,35,30], 15: [57,52,42,37,32,27], 30: [46,41,31,26,21,16], 43.75: [26,21,11,6,1,0] },
-  Sub:  { 0: [62,57,47,42,37,32], 10: [57,52,42,37,32,27], 15: [54,49,39,34,29,24], 30: [40,35,25,20,15,10], 43.75: [14,9,0,0,0,0]   },
-  Main: { 0: [60,55,45,40,35,30], 10: [54,49,39,34,29,24], 15: [50,45,35,30,25,20], 30: [33,28,18,13,8,3],   43.75: [0,0,0,0,0,0]    }
-};
-const DW_KEYS = [0, 10, 15, 30, 43.75];
+// ── Dual Wield trait tiers ──
 const DW_TIERS = [
   { pct: 10, jobs: 'NIN10, DNC20, BLU80*, THF83' },
   { pct: 15, jobs: 'NIN25, DNC40, BLU89*, THF90' },
@@ -786,19 +795,6 @@ function sambaSyncFromDW() {
   $('samba').value = map[$('dw-samba').value] || '0';
 }
 
-function getDWValue(cond, magicPct, tierIdx) {
-  const p = Math.min(Math.max(magicPct, 0), 43.75);
-  let lo = DW_KEYS.length - 2;
-  for (let i = 0; i < DW_KEYS.length - 1; i++) {
-    if (p <= DW_KEYS[i + 1]) { lo = i; break; }
-  }
-  const hi = lo + 1;
-  const loRow = DW_TABLE[cond][DW_KEYS[lo]];
-  const hiRow = DW_TABLE[cond][DW_KEYS[hi]];
-  const t = (p - DW_KEYS[lo]) / (DW_KEYS[hi] - DW_KEYS[lo]);
-  return Math.max(0, Math.round(loRow[tierIdx] * (1 - t) + hiRow[tierIdx] * t));
-}
-
 function recalc() {
   // ── Magic Haste (fractions /1024) ──
   let mFrac = 0;
@@ -806,13 +802,25 @@ function recalc() {
   mFrac += Math.round(sel('adv') * (sv ? 2 : (chk('merc-adv') ? 1.5 : 1)));
   mFrac += Math.round(sel('vic') * (sv ? 2 : (chk('merc-vic') ? 1.5 : 1)));
   mFrac += Math.round(sel('hon') * (sv ? 2 : (chk('merc-hon') ? 1.5 : 1)));
-  mFrac += sel('haste-spell');
+  // Haste/Haste II, Hastega/Hastega II, and Erratic Flutter share one buff slot:
+  // only the strongest applies (ties go to the row listed first in the panel).
+  const slot = [
+    { id: 'haste-spell', frac: sel('haste-spell') },
+    { id: 'hastega',     frac: sel('hastega') },
+    { id: 'erratic',     frac: chk('erratic') ? 307 : 0 }
+  ];
+  const slotMax = Math.max(...slot.map(s => s.frac));
+  const slotWinner = slotMax > 0 ? slot.find(s => s.frac === slotMax).id : null;
+  slot.forEach(s => {
+    const overwritten = s.frac > 0 && s.id !== slotWinner;
+    $('ovr-' + s.id).style.display = overwritten ? 'inline-block' : 'none';
+    $(s.id).style.opacity = overwritten ? '0.45' : '';
+  });
+  mFrac += slotMax;
   mFrac += chk('embrava')     ? 266 : 0;
-  mFrac += sel('hastega');
   mFrac += chk('refueling')   ? 102 : 0;
   mFrac += chk('anim-wail')   ? 154 : 0;
   mFrac += chk('mighty-guard')? 154 : 0;
-  mFrac += chk('erratic')     ? 307 : 0;
   const bolster = chk('bolster');
   const geoMult = spell => bolster ? 2 : 1 + (chk('bog-' + spell) ? 0.5 : 0) + (chk('ea-' + spell) ? 0.25 : 0);
   mFrac += Math.round(sel('indi') * geoMult('indi'));
@@ -840,7 +848,7 @@ function recalc() {
   // ── Equipment Haste ──
   const eRaw   = Math.max(0, parseFloat($('eq-num').value) || 0);
   const eFrac  = eRaw / 100 * 1024;
-  const EQ_CAP = 26 / 100 * 1024;
+  const EQ_CAP = 256; // 25% — 26% listed gear haste is needed to guarantee this due to /1024 truncation
   const eOver  = eFrac >= EQ_CAP;
   const eCap   = Math.min(eFrac, EQ_CAP);
   const eCapPct= pct(eCap);
@@ -882,13 +890,15 @@ function recalc() {
   $('dw-panel').style.opacity = maTier > 0 ? '0.45' : '';
   $('ma-panel').style.opacity = dwTier > 0 ? '0.45' : '';
 
+  // The 80% delay-reduction cap includes Dual Wield, so the combined figure is capped too
+  const combinedPct = Math.min(80, (1 - (1 - totCap / 100) * (1 - dwPct / 100)) * 100);
+
   // DW bar segment: effective delay removed = DW% × remaining delay after haste
-  const dwBarPct = (maTier === 0 && dwTier > 0) ? (dwPct / 100) * (100 - totCap) : 0;
+  const dwBarPct = (maTier === 0 && dwTier > 0) ? combinedPct - totCap : 0;
   $('tseg-dw').style.width = dwBarPct.toFixed(2) + '%';
 
   // Update Total card: when DW active, show combined effective delay reduction
   if (dwTier > 0 && maTier === 0) {
-    const combinedPct = (1 - (1 - totCap / 100) * (1 - dwPct / 100)) * 100;
     $('rval-tot').textContent = combinedPct.toFixed(2) + '%';
   }
 
@@ -905,7 +915,7 @@ function recalc() {
     $('ma-sub').textContent          = 'Base: ' + maInfo.delay + ' delay';
     $('ma-jobs-info').textContent    = 'Jobs: ' + maInfo.jobs;
   } else {
-    const delayRem  = (100 - totCap) * (1 - dwPct / 100);
+    const delayRem  = Math.max(20, (100 - totCap) * (1 - dwPct / 100)); // 80% cap includes DW
     $('delay-pct').textContent       = delayRem.toFixed(2) + '%';
     $('speed-mult').textContent      = (100 / delayRem).toFixed(2) + '\xD7';
     $('delay-row-std').style.display = '';
@@ -919,17 +929,21 @@ function recalc() {
   // ── Dual Wield display ──
   const dwEl = $('dw-result');
   if (dwTier > 0) {
-    const dwCond = $('dw-samba').value;
-    const dwVal  = getDWValue(dwCond, mCapPct, dwTier - 1);
+    // Gear DW needed to reach the 80% cap: (1 - DW/100)(1 - haste) <= 0.20.
+    // The 1e-9 absorbs float noise when the threshold lands exactly on an integer.
+    const needTotal = 100 - 20 / (1 - totCap / 100);
+    const dwVal = Math.max(0, Math.ceil(needTotal - dwPct - 1e-9));
     $('dw-tier-delay').textContent = DW_TIERS[dwTier - 1].pct + '%';
     dwEl.textContent = 'DW+ Needed: ' + dwVal;
     dwEl.className   = 'dw-dw-plus';
+    $('dw-basis').textContent = 'to cap at your ' + totCap.toFixed(2) + '% total haste';
     $('dw-jobs-info').textContent = 'Jobs: ' + DW_TIERS[dwTier - 1].jobs;
     $('legend-dw').style.display  = '';
   } else {
     $('dw-tier-delay').textContent = '—';
     dwEl.textContent = '';
     dwEl.className   = 'dw-dw-plus';
+    $('dw-basis').textContent      = '';
     $('dw-jobs-info').textContent  = '';
     $('legend-dw').style.display   = 'none';
   }
@@ -960,7 +974,7 @@ function setEqPanel(rawPct, capPct, fracCap, over) {
   valEl.className   = 'panel-val' + (over ? ' overcap' : '');
   overEl.style.display = over ? 'block' : 'none';
 
-  const barWidth = Math.min(rawPct / 26 * 100, 100);
+  const barWidth = Math.min(rawPct / 25 * 100, 100);
   barEl.style.width = barWidth + '%';
   barEl.className   = 'fill fill-eq' + (over ? ' fill-capped' : '');
 }
@@ -975,6 +989,18 @@ function numSync(v) {
   $('eq-slider').value = clamped;
   recalc();
 }
+
+// Browser form-state restore (e.g. Firefox refresh) can bring back both DW and MA
+// selections, which would leave each select permanently disabling the other.
+if (parseInt($('dw-tier').value) > 0 && parseInt($('ma-tier').value) > 0) {
+  $('ma-tier').value = '0';
+}
+
+const lastMod = new Date(document.lastModified);
+$('updated-date').textContent =
+  lastMod.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) +
+  ' ' + lastMod.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' }) +
+  ' UTC';
 
 recalc();
 </script>
